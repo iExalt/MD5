@@ -1,11 +1,14 @@
 // Code your testbench here
 // or browse Examples
 module MD5;
-  string inStr = "abcdefghijklmnopqrstuvwxyz";
+  //string inStr = "abcdefghijklmnopqrstuvwxyz";
+  string inStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   reg unsigned [7:0] array1[];
   reg unsigned [31:0] array2[];
+  reg unsigned [31:0] array3 [15:0];
   reg unsigned [63:0] size = 0;
   reg unsigned [63:0] sizeSingle = 0;
+  reg unsigned [7:0] rotateByte [0:7];
   reg unsigned [7:0] rotateA [0:3];
   reg unsigned [7:0] rotateB [0:3];
   reg unsigned [7:0] rotateC [0:3];
@@ -14,10 +17,14 @@ module MD5;
   reg unsigned [31:0] wordB = 32'h EFCDAB89;
   reg unsigned [31:0] wordC = 32'h 98BADCFE;
   reg unsigned [31:0] wordD = 32'h 10325476;
-  reg unsigned [31:0] resultA = 0;
-  reg unsigned [31:0] resultB = 0;
-  reg unsigned [31:0] resultC = 0;
-  reg unsigned [31:0] resultD = 0;
+  reg unsigned [31:0] tempA = 0;
+  reg unsigned [31:0] tempB = 0;
+  reg unsigned [31:0] tempC = 0;
+  reg unsigned [31:0] tempD = 0;
+  reg unsigned [31:0] resultA = 32'h 67452301;
+  reg unsigned [31:0] resultB = 32'h EFCDAB89;
+  reg unsigned [31:0] resultC = 32'h 98BADCFE;
+  reg unsigned [31:0] resultD = 32'h 10325476;
   
   reg unsigned [7:0] tempNum = 0;
   
@@ -106,10 +113,16 @@ module MD5;
 
         //function reg unsigned [63:0] MD5;
   function automatic void MD5(reg unsigned [31:0] x[], ref reg unsigned [31:0] a,b,c,d);
-          static reg unsigned [31:0] s, n, message, o;
+          static reg unsigned [31:0] s, n, message, o, dispA, dispB, dispC, dispD = 0;
           s = 7;
           n = 0;
-   
+
+          a = wordA;
+          b = wordB;
+          c = wordC;
+          d = wordD;   
+
+
 
           //first round
           for (int i = 0; i < 4; i++)
@@ -136,6 +149,15 @@ module MD5;
                     end
                     default: $display("case select error");
                   endcase
+                  $display("Round: %0d", i * 4 + j);
+                  $display("A: %h", a);
+                  $display("B: %h", b);
+                  $display("C: %h", c);
+                  $display("D: %h", d);
+                  $display("s: %d", s);
+                  $display("n: %d", n);
+                  $display("Message: %h", message);
+
                 end
             end
 
@@ -247,34 +269,43 @@ module MD5;
                     end             
                 end
             end
-          
 
-          a += 31'h67452301;
-          b += 31'hEFCDAB89;
-          c += 31'h98BADCFE;
-          d += 31'h10325476;
+
+          a += wordA;
+          b += wordB;
+          c += wordC;
+          d += wordD;
+          
+          wordA = a;
+          wordB = b;
+          wordC = c;
+          wordD = d;
+
+          $display("wordA %h", wordA);
 
           for (int i = 0; i < 4; i++)
             begin
-              rotateA[i] = (a >> (i * 8));
-              rotateB[i] = (b >> (i * 8));
-              rotateC[i] = (c >> (i * 8));
-              rotateD[i] = (d >> (i * 8));
+              rotateA[i] = a[7:0];
+              rotateB[i] = b[7:0];
+              rotateC[i] = c[7:0];
+              rotateD[i] = d[7:0];
+              a = a >> 8;
+              b = b >> 8;
+              c = c >> 8;
+              d = d >> 8;
             end
 
-          //for (int i = 0; i < 3)
-
-          a = {rotateA[0], rotateA[1], rotateA[2], rotateA[3]};
-          b = {rotateB[0], rotateB[1], rotateB[2], rotateB[3]};
-          c = {rotateC[0], rotateC[1], rotateC[2], rotateC[3]};
-          d = {rotateD[0], rotateD[1], rotateD[2], rotateD[3]};
-
-
+          dispA = {rotateA[0], rotateA[1], rotateA[2], rotateA[3]};
+          dispB = {rotateB[0], rotateB[1], rotateB[2], rotateB[3]};
+          dispC = {rotateC[0], rotateC[1], rotateC[2], rotateC[3]};
+          dispD = {rotateD[0], rotateD[1], rotateD[2], rotateD[3]};
 
           $display("");
           $display("");
-          //$display("Final output: %h", {resultA, resultB, resultC, resultD});
-          $display("Final output: %h", {a,b,c,d});
+          $display("Final output: %h", {dispA,dispB,dispC,dispD});
+          $display("Size: ", array1.size());
+          
+
 
         endfunction
   
@@ -349,7 +380,7 @@ module MD5;
           end
       end
     
-
+    /*tempNum = 0;
     if ((rotateByte[1]||rotateByte[2]||rotateByte[3]||rotateByte[4]||rotateByte[5]||rotateByte[6]||rotateByte[7]))
       begin
         for (int i = 0; i < 6; i++)
@@ -373,13 +404,15 @@ module MD5;
         rotateByte[7] = rotateByte[0];
         rotateByte[0] = 0;
       end
+    */
          
     
     for (int i = 0; i < 2; i++)
       begin
         for (int j = 1; j <= 4; j++)
           begin
-            array1[array1.size() - (2-i) * 4 + (4-j)] = rotateByte[7-(i*4 + (j-1))];
+             //array1[array1.size() - (2-i) * 4 + (4-j)] = rotateByte[7-(i*4 + (j-1))];
+             array1[array1.size() - (2-i) * 4 + (4-j)] = rotateByte[(i*4 + (j-1))];
           end
       end
 
@@ -402,7 +435,16 @@ module MD5;
           $display("newArray[ %d", i, "] = %h", array2[i]);
         end
 
+    for (int i = 0; i < (array1.size() >> 6); i++)
+      begin
+        array3 = array2[0:15];
+        MD5(array3, resultA, resultB, resultC, resultD);        
+        for (int j = 0; j < array2.size(); j++)
+          begin
+            array2[j] = array2[j+16];
+            //$display("array2[ %d", j, "] = %h", array2[i]);
+          end
+      end
 
-    MD5(array2, wordA, wordB, wordC, wordD);
   end
 endmodule
