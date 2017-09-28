@@ -2,7 +2,7 @@
 // or browse Examples
 module MD5;
   //string inStr = "abcdefghijklmnopqrstuvwxyz";
-  string inStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  string inStr = "abc";
   reg unsigned [7:0] array1[];
   reg unsigned [31:0] array2[];
   reg unsigned [31:0] array3 [15:0];
@@ -149,14 +149,14 @@ module MD5;
                     end
                     default: $display("case select error");
                   endcase
-                  $display("Round: %0d", i * 4 + j);
+                  /*$display("Round: %0d", i * 4 + j);
                   $display("A: %h", a);
                   $display("B: %h", b);
                   $display("C: %h", c);
                   $display("D: %h", d);
                   $display("s: %d", s);
                   $display("n: %d", n);
-                  $display("Message: %h", message);
+                  $display("Message: %h", message);*/
 
                 end
             end
@@ -352,14 +352,16 @@ module MD5;
           end
       end
     //extend array2 to the same size as array1
+    size = inStr.len();
     array2 = new[array1.size() >> 2];
+
     
     //append '128' i.e 1000 000 to the beginning of the last filled block
-    modulo4[1:0] = size[1:0];
+    modulo4 = size[1:0];
     
     if (modulo4 != 0)
       begin
-        array1[(((size >> 2) + 1) * 4) - (4 - modulo4) - 1] = 128;
+        array1[((size >> 2) * 4) + (3 - modulo4)] = 128;
       end
     else
       begin
